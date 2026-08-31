@@ -8,6 +8,7 @@ import (
 	"image"
 	_ "image/gif"
 	_ "image/png"
+	_"embed"
 	"io"
 	"io/fs"
 	"log"
@@ -18,6 +19,8 @@ import (
 	"strings"
 
 	"github.com/hajimehoshi/ebiten/v2"
+
+	"github.com/getlantern/systray"
 
 	"github.com/hajimehoshi/ebiten/v2/audio"
 	"github.com/hajimehoshi/ebiten/v2/audio/wav"
@@ -108,6 +111,10 @@ const (
 	sheetColumns = 8
 	sheetRows    = 4
 )
+
+
+//go:embed icon.ico
+var iconData []byte
 
 // spriteSheetLayout maps each frame Neko draws to its cell in the sheet. The
 // eight movement directions and the sleeping frames sit on their canonical
@@ -503,8 +510,8 @@ func loadConfig() *Config {
 	cfg := &Config{
 		Speed:            2.0,
 		Scale:            2.0,
-		Quiet:            false,
-		MousePassthrough: false,
+		Quiet:            true,
+		MousePassthrough: true,
 		SpriteSheet:      "",
 	}
 
@@ -540,6 +547,8 @@ func loadConfig() *Config {
 }
 
 func main() {
+	systray.Run(onReady, onExit)
+
 	cfg := loadConfig()
 
 	// Command-line flags override the Filo config file. Their defaults are the
@@ -603,4 +612,33 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+func onReady() {
+	systray.SetIcon(iconData)
+	systray.SetTitle("neko")
+	systray.SetTooltip("neko")
+
+	mSettings := systray.AddMenuItem("Settings", "Open settings")
+	mQuit := systray.AddMenuItem("Quit","Close the Application")	
+
+	go func() {
+		for{
+			select {
+			case <-mSettings.ClickedCh:
+				fmt.Println("Open settings")
+				// Settings window
+
+			case <-mQuit.ClickedCh:
+				systray.Quit()
+				return
+			}
+		}
+	
+
+
+	}()
+}
+
+func onExit() {
+	// add stuff if it needs cleaning up
 }
